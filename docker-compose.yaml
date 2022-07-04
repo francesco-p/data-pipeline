@@ -1,0 +1,55 @@
+version: "3.7"
+networks:
+  backend:
+    driver: bridge
+
+services:
+  app:
+    image: test/application
+    build: 
+      context: .
+      dockerfile: app/Dockerfile
+    volumes:
+      - ./data:/data
+    links:
+      - database:database
+      - storage:storage
+    networks:
+      - backend
+
+  database:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: 'db'
+      # So you don't have to use root, but you can if you like
+      MYSQL_USER: 'user'
+      # You can use whatever password you like
+      MYSQL_PASSWORD: 'password'
+      # Password for root access
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      # <Port exposed> : < MySQL Port running inside container>
+      - '3306:3306'
+    expose:
+      # Opens port 3306 on the container
+      - '3306'
+    networks:
+      - backend
+    
+
+  storage:
+    image: minio/minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    expose:
+      # Opens port 3306 on the container
+      - '9000'
+      - '9001'
+    #restart: never
+    networks:
+      - backend
